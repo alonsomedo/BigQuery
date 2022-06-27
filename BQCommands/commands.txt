@@ -17,7 +17,7 @@
 # --------------------
 # Query command Flags
 # --------------------
---append_table : Boolean flag. When specified, query results are append to a table.
+--append_table or -a: Boolean flag. When specified, query results are append to a table.
 --destination_table : Table where to write the query results.
 --replace : Flag to overwrite the destination table with query results.
 --destination_schema : If the destination table is not present, it will get created with specified squema
@@ -40,9 +40,29 @@
 --allow_large_results : Enables large destination table sizes for legcy SQL queries.
 --flatten_results : Boolean field to get flattened results of nested and repeated fields.
 --udf_resource : This flag will contain the Cloud storage Uri or the pat to a local UDF code file.
+--range_partitioning [col-name], [lower-bound], [upper-bound], [interval]
 
 
+# ----------------------------
+# BQ CLI EXCLUSIVE OPERATIONS 
+# ----------------------------
+
+# Relaxing a column mode to nullable
+--schema_update_option : It has 2 values ALLOW_FIELD_ADDITION and ALLOW_FIELD_RELAXATION
+
+# --------------------
+# CP command Flags
+# --------------------
+
+--append_table or -a: Boolean flag. When specified, query results are append to a table.
+--destination_kms_key : Provide the resource id of customer generated encryption key
+--force or f : when specified, if the destination table exists, overwrite it. Default value is false
+--no_clobber or -n : when specified, if the destination table exists, do not overwrite it. Default value is false
+
+
+# ----------------
 # Show command
+# ----------------
 
 # Show Dataset 
 bq show --dataset bigquery-demo-354214:dataset1
@@ -55,7 +75,9 @@ bq show --schema --format prettyjson dataset1.names
 bq ls
 bq ls [dataset-name]
 
+# ----------------
 # Help command
+# ----------------
 bq help 
 
 # Canel (you can provide the name of a job and it will be canceled)
@@ -64,8 +86,9 @@ bq cancel [job-name]
 # Interactive mode (Shell)
 # To exit type exit
 bq shell
-
+# ----------------
 # Query command
+# ----------------
 bq query --use_legacy_sql=false 'SELECT * FROM `bigquery-demo-354214`.dataset1.names'
 
 bq query \
@@ -78,6 +101,89 @@ bq query \
 --label key1:value1 \
 --label key2:value2 \
 --dry_run \
+'SELECT * FROM `bigquery-demo-354214`.dataset1.names limit 10'
+
+bq query \
+--use_legacy_sql=false \
+--label dummy_key1:value1 \
+--label dummy_key2:value2 \
+--batch=false \
+--maximum_bytes_billed=30000000 \
+--require_cache=false \
+--destination_table=bigquery-demo-354214:dataset1.names_ggg \
+--destination_schema names:string,gend:string,count:integer \
+--time_partitioning_field \
+--clustering_fields=name \
+--time_partitioning_expiration=90000 \
+SELECT * FROM `bigquery-demo-354214.dataset1.names` limit 10
+
+# ----------------
+# Create dataset
+# ----------------
+bq mk --dataset --default_table_expiration 4000 --default_partition_expiration 5000 --description "New dataset" bigquery-demo-354214:dataset_bq
+
+# ------------------
+# Create table
+# ------------------
+bq mk \
+--table \
+--expiration 3000 \
+--description "New table from BQ" \
+--label du1:v1 \
+--label du2:v2 \
+--require_partition_filter=false \
+--time_partitioning_type DAY \
+--time_partitioning_expiration 6000 \
+--clustering_fields name \
+--schema name:string,gender:string,count:integer dataset1.names_from_bq
+
+# --------------------------------------
+# Create table with json file as schema
+# --------------------------------------
+bq mk \
+--table \
+--expiration 3000 \
+--description "New table from BQ" \
+--label du1:v1 \
+--label du2:v2 \
+--require_partition_filter=false \
+--time_partitioning_type DAY \
+--time_partitioning_expiration 6000 \
+--clustering_fields name \
+--schema /home/alonsmd/Downloads/BQ_json_schema.txt dataset1.names_from_bq_json
+
+# -------------------------------------------------------------------------------
+# Load commands 
+# Reference: https://cloud.google.com/bigquery/docs/reference/bq-cli-reference
+# -------------------------------------------------------------------------------
+bq load \
+bigquery-demo-354214:dataset1.names_from_cli \
+/home/alonsmd/Downloads/names/yob1880.txt /home/alonsmd/Downloads/BQ_json_schema.txt 
+
+bq query --use_legacy_sql=false 'select * from `bigquery-demo-354214`.dataset1.names_from_cli limit 10'
 
 
-'SELECT * FROM `bigquery-demo-285417`.dataset1.names limit 10'
+
+# -------------------------------------------------------------------------------
+# Partition Operations 
+# -------------------------------------------------------------------------------
+# Load data and relaxing column
+bq load \
+--schema_update_option ALLOW_FIELD_RELAXATION \
+bigquery-demo-354214:dataset1.tab_req /home/alonsmd/Downloads/names/yob1880.txt name:string,gender:string,count:integer
+
+# Copy a specific partition to another table
+bq cp -a 'dataset1.demo_part_date$20200117' dataset1.dest_table
+bq cp -a 'dataset1.demo_part_date$20200119' dataset1.dest_table
+bq cp -a dataset1.demo_part_date$20200119,dataset1.demo_part_date$20200118 dataset1.dest_table
+
+select * from [dataset1.dest_table$__PARTITIONS_SUMMARY__]
+
+
+bq rm dataset1.part_ing_2$2020112005
+
+# Copy a partition data into another partition
+bq cp -f 'dataset1.part_ing_1$20220626' 'dataset1.part_ing_2$20220627'
+
+select count(*) from `bigquery-demo-354214.dataset1.part_ing_2` where _PARTITIONTIME = TIMESTAMP("2020-11-20 10:00:00")
+select count(1) as q from `bigquery-demo-354214.dataset1.part_ing_2` where _PARTITIONDATE = DATE("2022-06-27")

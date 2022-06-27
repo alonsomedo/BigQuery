@@ -187,3 +187,16 @@ bq cp -f 'dataset1.part_ing_1$20220626' 'dataset1.part_ing_2$20220627'
 
 select count(*) from `bigquery-demo-354214.dataset1.part_ing_2` where _PARTITIONTIME = TIMESTAMP("2020-11-20 10:00:00")
 select count(1) as q from `bigquery-demo-354214.dataset1.part_ing_2` where _PARTITIONDATE = DATE("2022-06-27")
+
+
+
+bq mk \
+--location us \
+--table \
+--expiration 3000 \
+--description "Multi-Region-Table" \
+--require_partition_filter=false \
+--time_partitioning_type DAY \
+--time_partitioning_expiration 6000 \
+--clustering_fields name \
+--schema /home/alonsmd/Downloads/BQ_json_schema.txt dataset_mr.names

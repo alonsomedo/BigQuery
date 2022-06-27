@@ -1,0 +1,83 @@
+# --------------------
+# Global Flags
+# --------------------
+-‒location : Where to run following command.
+
+-‒format :  Specifies the format of the command's output.
+    - pretty : formatted table output
+    - sparse : simpler table output
+    - prettyjson : easy-to-read json format
+    - json : compact JSON
+    - csv : CSV format with header
+
+--job_id : Explicitly give name to a job. Used with those commands that create a job.
+    Example: cp, load, extract, etc.
+
+
+# --------------------
+# Query command Flags
+# --------------------
+--append_table : Boolean flag. When specified, query results are append to a table.
+--destination_table : Table where to write the query results.
+--replace : Flag to overwrite the destination table with query results.
+--destination_schema : If the destination table is not present, it will get created with specified squema
+--time_partitioning_field : If you want to partition the destition table on some time. Provide column
+--time_partitioning_type : Ingestion time partition table. Example --time_partitioning_type=DAY
+--time_partitioning_expiration : Set the partition expiration time in seconds.
+--clustering_fields : Specify upto 4 comma-separated columns on which you want to cluster the destination table.
+--destination_kms_key : Provide the resource id of customer generated encryption key
+--batch : Keep it to true if you want the query to run in batch mode.
+--maximum_bytes_billed : Flag to limit the bytes billed for query.
+--label : Flag to apply labels to a query job in the form of key value pairs.
+--dry_run : Validator flag to check the correctness of a query and bytes to be processed.
+--max_rows : Integer specifying the number of rows to return in the query results.
+--require-cache : If specified, query will only run if the results can be retrieved from the cache otherwise not.
+--use_cache : Set it to false if you do not want the current query to use cached results.
+--nouse_cache : Equivalent to --use_cache=false
+--schedule : Makes a recurring scheduled query. Example: --schedule = 'every 24 hours'
+--display_name : Name give to the schedule
+--target_dataset : Write scheduled query results into a destination table.
+--allow_large_results : Enables large destination table sizes for legcy SQL queries.
+--flatten_results : Boolean field to get flattened results of nested and repeated fields.
+--udf_resource : This flag will contain the Cloud storage Uri or the pat to a local UDF code file.
+
+
+# Show command
+
+# Show Dataset 
+bq show --dataset bigquery-demo-354214:dataset1
+
+# Show schema
+bq show --schema dataset1.names
+bq show --schema --format prettyjson dataset1.names
+
+# List entities inside a collection
+bq ls
+bq ls [dataset-name]
+
+# Help command
+bq help 
+
+# Canel (you can provide the name of a job and it will be canceled)
+bq cancel [job-name]
+
+# Interactive mode (Shell)
+# To exit type exit
+bq shell
+
+# Query command
+bq query --use_legacy_sql=false 'SELECT * FROM `bigquery-demo-354214`.dataset1.names'
+
+bq query \
+--use_legacy_sql=false \
+--append_table=false \
+--destination_table \
+--clustering_fields \
+--batch=false \
+--maximum_bytes_billed=30000000 \
+--label key1:value1 \
+--label key2:value2 \
+--dry_run \
+
+
+'SELECT * FROM `bigquery-demo-285417`.dataset1.names limit 10'

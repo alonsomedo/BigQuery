@@ -24,6 +24,8 @@ parser.add_argument('--input',
 
 path_args, pipeline_args = parser.parse_known_args()
 
+print(path_args, pipeline_args)
+
 inputs_pattern = path_args.input
 
 options = PipelineOptions(pipeline_args)

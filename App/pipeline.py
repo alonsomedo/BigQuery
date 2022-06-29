@@ -24,10 +24,9 @@ parser.add_argument('--input',
 
 path_args, pipeline_args = parser.parse_known_args()
 
-print(path_args, pipeline_args)
-
 inputs_pattern = path_args.input
 
+# https://cloud.google.com/dataflow/docs/guides/setting-pipeline-options?hl=es-419#python
 options = PipelineOptions(pipeline_args)
 
 p = beam.Pipeline(options = options)
@@ -103,7 +102,7 @@ other_orders = (
 
 client = bigquery.Client() # Account key is not necessary because we are going to run the code from cloudshell
 
-dataset_id = f'{client.project}.dataset_food_orders'
+dataset_id = f'{client.project}.dataset_food_orders_latest'
 try:
     client.get_dataset(dataset_id)
 
@@ -113,11 +112,7 @@ except:
     dataset.description = "Dataset created from Python"
     dataset_ref = client.create_dataset(dataset, timeout = 30) # Make an API request.
 
-delivered_table_spec = 'bigquery-demo-354214:dataset_food_orders.delivered_orders'
-table_schema = 'customer_id:STRING,date:STRING,timestamp:STRING,order_id:STRING,items:STRING,amount:STRING,mode:STRING,restaurant:STRING,status:STRING,ratings:STRING,feedback:STRING,new_col:STRING'
-other_table_spec = 'bigquery-demo-354214:dataset_food_orders.other_orders'
 
- 
 """Table Creation
  
 Beam has a library to create and load data in BigQuery tables.
@@ -132,6 +127,12 @@ We will be using apache_beam.io.WriteToBigQuery(
  
 Takes input as .json but we have p-collections in .csv format; so we'll first convert to .json
 """
+
+delivered_table_spec = 'bigquery-demo-354214:dataset_food_orders_latest.delivered_orders'
+other_table_spec = 'bigquery-demo-354214:dataset_food_orders_latest.other_orders'
+
+table_schema = 'customer_id:STRING,date:STRING,timestamp:STRING,order_id:STRING,items:STRING,amount:STRING,mode:STRING,restaurant:STRING,status:STRING,ratings:STRING,feedback:STRING,new_col:STRING'
+
 
 (delivered_orders
     | 'delivered to json' >> beam.Map(to_json)
